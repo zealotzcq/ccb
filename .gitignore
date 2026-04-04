@@ -10,3 +10,4 @@ coverage
 *.lock
 src/utils/vendor/
 *.bun-build
+.claude/

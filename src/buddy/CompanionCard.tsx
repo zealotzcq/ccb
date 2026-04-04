@@ -2,11 +2,13 @@
  * Companion display card — shown by /buddy (no args).
  * Mirrors official vc8 component: bordered box with sprite, stats, last reaction.
  */
-import React from 'react';
-import { Box, Text } from '../ink.js';
+import React, { useEffect, useState } from 'react';
+import { Box, Text, useTheme, useAnimationFrame } from '../ink.js';
 import { useInput } from '../ink.js';
-import { renderSprite } from './sprites.js';
+import { getTheme, type Theme } from '../utils/theme.js';
+import { renderSprite, SHIMMER_PAUSE, SHIMMER_SPEED, SHIMMER_WAIT } from './sprites.js';
 import { RARITY_COLORS, RARITY_STARS, STAT_NAMES, type Companion } from './types.js';
+import { renderShimmerLine } from './shimmer.js';
 
 const CARD_WIDTH = 40;
 const CARD_PADDING_X = 2;
@@ -33,6 +35,52 @@ export function CompanionCard({
 }) {
   const color = RARITY_COLORS[companion.rarity];
   const stars = RARITY_STARS[companion.rarity];
+  const [themeName] = useTheme();
+  const theme = getTheme(themeName);
+
+  // Shimmer animation state
+  const [isShimmering, setIsShimmering] = useState(false);
+
+  // Use Ink's useAnimationFrame for smooth shimmer movement
+  const [, charTime] = useAnimationFrame(
+    companion.shiny && isShimmering ? 16 : null
+  );
+
+  // Calculate glimmer position (moves left to right across the sprite)
+  const glimmerIndex = Math.floor(charTime / SHIMMER_SPEED);
+
+  // Set up shimmer phase scheduling
+  useEffect(() => {
+    if (!companion.shiny) return;
+
+    // Start shimmering immediately
+    setIsShimmering(true);
+
+    // Schedule shimmer phase end and next start
+    const scheduleNextCycle = () => {
+      const shimmerTimer = setTimeout(() => {
+        setIsShimmering(false);
+
+        // Fixed wait duration
+        const waitTimer = setTimeout(() => {
+          setIsShimmering(true);
+          scheduleNextCycle();
+        }, SHIMMER_WAIT);
+
+        timers.push(waitTimer);
+      }, SHIMMER_PAUSE);
+
+      timers.push(shimmerTimer);
+    };
+
+    const timers: NodeJS.Timeout[] = [];
+    scheduleNextCycle();
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [companion.shiny]);
+
   const sprite = renderSprite(companion, 0);
 
   // Press any key to dismiss
@@ -68,12 +116,18 @@ export function CompanionCard({
         </Text>
       )}
 
-      {/* Sprite */}
+      {/* Sprite with rainbow gradient + wave shimmer effect */}
       <Box flexDirection="column" marginY={1}>
         {sprite.map((line, i) => (
-          <Text key={i} color={color}>
-            {line}
-          </Text>
+          <Box key={i}>
+            {companion.shiny && isShimmering ? (
+              <>{renderShimmerLine(line, i, charTime, glimmerIndex, theme).map((seg, j) => (
+                <Text key={j} color={seg.color}>{seg.char}</Text>
+              ))}</>
+            ) : (
+              <Text color={color}>{line}</Text>
+            )}
+          </Box>
         ))}
       </Box>
 

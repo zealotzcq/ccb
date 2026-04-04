@@ -452,6 +452,15 @@ const HAT_LINES: Record<Hat, string> = {
 }
 
 export function renderSprite(bones: CompanionBones, frame = 0): string[] {
+  return renderSpriteWithColor(bones, frame)
+}
+
+// New: render with optional color override for shiny animation
+export function renderSpriteWithColor(
+  bones: CompanionBones,
+  frame = 0,
+  colorOverride?: string,
+): string[] {
   const frames = BODIES[bones.species]
   const body = frames[frame % frames.length]!.map(line =>
     line.replaceAll('{E}', bones.eye),
@@ -465,6 +474,10 @@ export function renderSprite(bones: CompanionBones, frame = 0): string[] {
   // there's no hat and the frame isn't using it for smoke/antenna/etc.
   // Only safe when ALL frames have blank line 0; otherwise heights oscillate.
   if (!lines[0]!.trim() && frames.every(f => !f[0]!.trim())) lines.shift()
+  // Store color override for use by renderer (attached as non-enumerable property)
+  if (colorOverride) {
+    (lines as any)._shinyColor = colorOverride
+  }
   return lines
 }
 
@@ -512,3 +525,8 @@ export function renderFace(bones: CompanionBones): string {
       return `(${eye}.${eye})`
   }
 }
+
+// Shimmer animation timing constants (must match CompanionCard.tsx)
+export const SHIMMER_SPEED = 100 // ms per character position
+export const SHIMMER_PAUSE = 5000 // 5 seconds shimmering
+export const SHIMMER_WAIT = 5000 // 5 seconds normal color
