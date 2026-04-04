@@ -122,7 +122,10 @@ export type Companion = CompanionBones &
 // What actually persists in config. Bones are regenerated from hash(userId)
 // on every read so species renames don't break stored companions and users
 // can't edit their way to a legendary.
-export type StoredCompanion = CompanionSoul & { hatchedAt: number }
+export type StoredCompanion = CompanionSoul & {
+  hatchedAt: number
+  shiny?: boolean  // User-settable shiny override
+}
 
 export const RARITY_WEIGHTS = {
   common: 60,

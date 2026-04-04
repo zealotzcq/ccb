@@ -114,6 +114,31 @@ export async function call(
     return null
   }
 
+  // ── /buddy shiny — make companion shiny (if not already) ──
+  if (sub === 'shiny') {
+    const companion = getCompanion()
+    if (!companion) {
+      onDone('no companion yet \u00b7 run /buddy first', { display: 'system' })
+      return null
+    }
+
+    if (companion.shiny) {
+      onDone(`${companion.name} is already shiny! \u2728`, { display: 'system' })
+      return null
+    }
+
+    saveGlobalConfig(cfg => ({
+      ...cfg,
+      companion: cfg.companion ? { ...cfg.companion, shiny: true } : undefined,
+    }))
+
+    // Trigger re-render
+    setState?.(prev => ({ ...prev }))
+
+    onDone(`${companion.name} is now shiny! \u2728`, { display: 'system' })
+    return null
+  }
+
   // ── /buddy (no args) — show existing or hatch ──
   const companion = getCompanion()
 

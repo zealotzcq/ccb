@@ -131,6 +131,10 @@ export function getCompanion(): Companion | undefined {
   if (!stored) return undefined
   const seed = stored.seed ?? companionUserId()
   const { bones } = rollWithSeed(seed)
+  // If shiny is explicitly stored, override the randomly-generated value
+  const overriddenBones = stored.shiny !== undefined
+    ? { ...bones, shiny: stored.shiny }
+    : bones
   // bones last so stale bones fields in old-format configs get overridden
-  return { ...stored, ...bones }
+  return { ...stored, ...overriddenBones }
 }
