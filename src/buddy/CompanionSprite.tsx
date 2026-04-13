@@ -3,8 +3,8 @@ import { feature } from 'bun:bundle';
 import figures from 'figures';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
-import { stringWidth } from '../ink/stringWidth.js';
-import { Box, Text } from '../ink.js';
+import { stringWidth } from '@anthropic/ink'
+import { Box, Text } from '@anthropic/ink';
 import { useAppState, useSetAppState } from '../state/AppState.js';
 import type { AppState } from '../state/AppStateStore.js';
 import { getGlobalConfig } from '../utils/config.js';
@@ -174,12 +174,14 @@ function SpeechBubble(t0) {
   }
   return t9;
 }
+
 export const MIN_COLS_FOR_FULL_SPRITE = 100;
 const SPRITE_BODY_WIDTH = 12;
 const NAME_ROW_PAD = 2; // focused state wraps name in spaces: ` name `
 const SPRITE_PADDING_X = 2;
 const BUBBLE_WIDTH = 36; // SpeechBubble box (34) + tail column
 const NARROW_QUIP_CAP = 24;
+
 function spriteColWidth(nameWidth: number): number {
   return Math.max(SPRITE_BODY_WIDTH, nameWidth + NAME_ROW_PAD);
 }
@@ -198,6 +200,7 @@ export function companionReservedColumns(terminalColumns: number, speaking: bool
   const bubble = speaking && !isFullscreenActive() ? BUBBLE_WIDTH : 0;
   return spriteColWidth(nameWidth) + SPRITE_PADDING_X + bubble;
 }
+
 export function CompanionSprite(): React.ReactNode {
   const reaction = useAppState(s => s.companionReaction);
   const petAt = useAppState(s => s.companionPetAt);
@@ -206,7 +209,6 @@ export function CompanionSprite(): React.ReactNode {
   const { columns } = useTerminalSize();
   const [tick, setTick] = useState(0);
   const lastSpokeTick = useRef(0);
-
   // Sync-during-render (not useEffect) so the first post-pet render already
   // has petStartTick=tick and petAge=0 — otherwise frame 0 is skipped.
   const [{ petStartTick, forPetAt }, setPetStart] = useState({
@@ -219,6 +221,7 @@ export function CompanionSprite(): React.ReactNode {
       forPetAt: petAt,
     });
   }
+
   useEffect(() => {
     const timer = setInterval(setT => setT((t: number) => t + 1), TICK_MS, setTick);
     return () => clearInterval(timer);
@@ -289,6 +292,7 @@ export function CompanionSprite(): React.ReactNode {
   }
   const frameCount = spriteFrameCount(companion.species);
   const heartFrame = petting ? PET_HEARTS[petAge % PET_HEARTS.length] : null;
+
   let spriteFrame: number;
   let blink = false;
   if (reaction || petting) {
@@ -367,7 +371,7 @@ export function CompanionSprite(): React.ReactNode {
 // just reads companionReaction and renders the fade.
 export function CompanionFloatingBubble() {
   const $ = _c(8);
-  const reaction = useAppState(_temp);
+  const reaction = useAppState(s => s.companionReaction);
   let t0;
   if ($[0] !== reaction) {
     t0 = {
@@ -394,7 +398,7 @@ export function CompanionFloatingBubble() {
       if (!reaction) {
         return;
       }
-      const timer = setInterval(_temp3, TICK_MS, setTick);
+      const timer = setInterval(s => setTick(prev => ({ ...prev, tick: prev.tick + 1 })), TICK_MS);
       return () => clearInterval(timer);
     };
     t3 = [reaction];
@@ -424,16 +428,4 @@ export function CompanionFloatingBubble() {
     t5 = $[7];
   }
   return t5;
-}
-function _temp3(set) {
-  return set(_temp2);
-}
-function _temp2(s_0) {
-  return {
-    ...s_0,
-    tick: s_0.tick + 1,
-  };
-}
-function _temp(s) {
-  return s.companionReaction;
 }

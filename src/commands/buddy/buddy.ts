@@ -153,7 +153,7 @@ export async function call(
     return React.createElement(CompanionCard, {
       companion,
       lastReaction,
-      onDone,
+      onDone: onDone as unknown as Parameters<typeof CompanionCard>[0]['onDone'],
     })
   }
 

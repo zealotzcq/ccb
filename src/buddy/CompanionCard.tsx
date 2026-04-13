@@ -3,8 +3,8 @@
  * Mirrors official vc8 component: bordered box with sprite, stats, last reaction.
  */
 import React, { useEffect, useState } from 'react';
-import { Box, Text, useTheme, useAnimationFrame } from '../ink.js';
-import { useInput } from '../ink.js';
+import { Box, Text, useTheme, useAnimationFrame } from '@anthropic/ink';
+import { useInput } from '@anthropic/ink';
 import { getTheme, type Theme } from '../utils/theme.js';
 import { renderSprite, SHIMMER_PAUSE, SHIMMER_SPEED, SHIMMER_WAIT } from './sprites.js';
 import { RARITY_COLORS, RARITY_STARS, STAT_NAMES, type Companion } from './types.js';
@@ -42,9 +42,7 @@ export function CompanionCard({
   const [isShimmering, setIsShimmering] = useState(false);
 
   // Use Ink's useAnimationFrame for smooth shimmer movement
-  const [, charTime] = useAnimationFrame(
-    companion.shiny && isShimmering ? 16 : null
-  );
+  const [, charTime] = useAnimationFrame(companion.shiny && isShimmering ? 16 : null);
 
   // Calculate glimmer position (moves left to right across the sprite)
   const glimmerIndex = Math.floor(charTime / SHIMMER_SPEED);
@@ -121,9 +119,13 @@ export function CompanionCard({
         {sprite.map((line, i) => (
           <Box key={i}>
             {companion.shiny && isShimmering ? (
-              <>{renderShimmerLine(line, i, charTime, glimmerIndex, theme).map((seg, j) => (
-                <Text key={j} color={seg.color}>{seg.char}</Text>
-              ))}</>
+              <>
+                {renderShimmerLine(line, i, charTime, glimmerIndex, theme).map((seg, j) => (
+                  <Text key={j} color={seg.color}>
+                    {seg.char}
+                  </Text>
+                ))}
+              </>
             ) : (
               <Text color={color}>{line}</Text>
             )}

@@ -1,6 +1,6 @@
 {
   "name": "claude-code-best",
-  "version": "1.0.3",
+  "version": "1.3.3",
   "description": "Reverse-engineered Anthropic Claude Code CLI — interactive AI coding assistant in the terminal",
   "type": "module",
   "author": "claude-code-best <claude-code-best@proton.me>",
@@ -25,8 +25,9 @@
     "bun": ">=1.2.0"
   },
   "bin": {
-    "ccb": "dist/cli.js",
-    "claude-code-best": "dist/cli.js"
+    "ccb": "dist/cli-node.js",
+    "ccb-bun": "dist/cli-bun.js",
+    "claude-code-best": "dist/cli-node.js"
   },
   "workspaces": [
     "packages/*",
@@ -34,7 +35,8 @@
   ],
   "files": [
     "dist",
-    "scripts/download-ripgrep.ts"
+    "scripts/postinstall.cjs",
+    "scripts/setup-chrome-mcp.mjs"
   ],
   "scripts": {
     "build": "bun run build.ts",
@@ -48,12 +50,18 @@
     "test": "bun test",
     "check:unused": "knip-bun",
     "health": "bun run scripts/health-check.ts",
-    "postinstall": "node dist/download-ripgrep.js || bun run scripts/download-ripgrep.ts || true",
-    "docs:dev": "npx mintlify dev"
+    "postinstall": "node scripts/postinstall.cjs && node scripts/setup-chrome-mcp.mjs",
+    "docs:dev": "npx mintlify dev",
+    "rcs": "bun run scripts/rcs.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "mcp-chrome-bridge": "^1.0.31"
+  },
   "devDependencies": {
-    "openai": "^4.73.0",
+    "@types/he": "^1.2.3",
+    "@langfuse/otel": "^5.1.0",
+    "@langfuse/tracing": "^5.1.0",
+    "@types/lodash-es": "^4.17.12",
     "@alcalzone/ansi-tokenize": "^0.3.0",
     "@ant/claude-for-chrome-mcp": "workspace:*",
     "@ant/computer-use-input": "workspace:*",
@@ -66,6 +74,10 @@
     "@anthropic-ai/sandbox-runtime": "^0.0.44",
     "@anthropic-ai/sdk": "^0.80.0",
     "@anthropic-ai/vertex-sdk": "^0.14.4",
+    "@anthropic/ink": "workspace:*",
+    "@claude-code-best/builtin-tools": "workspace:*",
+    "@claude-code-best/agent-tools": "workspace:*",
+    "@claude-code-best/mcp-client": "workspace:*",
     "@aws-sdk/client-bedrock": "^3.1020.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1020.0",
     "@aws-sdk/client-sts": "^3.1020.0",
@@ -99,11 +111,18 @@
     "@smithy/node-http-handler": "^4.5.1",
     "@types/bun": "^1.3.11",
     "@types/cacache": "^20.0.1",
+    "@types/picomatch": "^4.0.3",
     "@types/plist": "^3.0.5",
+    "@types/proper-lockfile": "^4.1.4",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.14",
     "@types/react-reconciler": "^0.33.0",
+    "@types/semver": "^7.7.1",
     "@types/sharp": "^0.32.0",
+    "@types/shell-quote": "^1.7.5",
+    "@types/stack-utils": "^2.0.3",
     "@types/turndown": "^5.0.6",
+    "@types/ws": "^8.18.1",
     "ajv": "^8.18.0",
     "asciichart": "^1.5.25",
     "audio-capture-napi": "workspace:*",
@@ -138,6 +157,7 @@
     "lru-cache": "^11.2.7",
     "marked": "^17.0.5",
     "modifiers-napi": "workspace:*",
+    "openai": "^6.33.0",
     "p-map": "^7.0.4",
     "picomatch": "^4.0.4",
     "plist": "^3.1.0",
