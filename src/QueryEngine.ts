@@ -2,6 +2,7 @@ import { feature } from 'bun:bundle'
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.mjs'
 import { randomUUID } from 'crypto'
 import last from 'lodash-es/last.js'
+import { getAppState } from 'src/bootstrap/state.js'
 import {
   getSessionId,
   isSessionPersistenceDisabled,
@@ -261,7 +262,12 @@ export class QueryEngine {
       )
 
       // Track denials for SDK reporting
-      if (result.behavior !== 'allow') {
+      // requiresUserInteraction tools in non-interactive mode are not denials —
+      // they output tool_use and stop cleanly for the external bridge to handle.
+      if (
+        result.behavior !== 'allow' &&
+        !(tool.requiresUserInteraction?.() && !process.stdout.isTTY)
+      ) {
         this.permissionDenials.push({
           type: 'permission_denial',
           tool_name: sdkCompatToolName(tool.name),
@@ -1105,6 +1111,35 @@ export class QueryEngine {
     }
 
     if (!isResultSuccessful(result, lastStopReason)) {
+      // Special case: stop_reason=tool_use with no permission_denials means
+      // a requiresUserInteraction tool was cleanly deferred in non-interactive
+      // mode (e.g. AskUserQuestion waiting for external bridge). Treat as success.
+      if (
+        lastStopReason === 'tool_use' &&
+        this.permissionDenials.length === 0
+      ) {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          is_error: false,
+          duration_ms: Date.now() - startTime,
+          duration_api_ms: getTotalAPIDuration(),
+          num_turns: turnCount,
+          result: '',
+          stop_reason: lastStopReason,
+          session_id: getSessionId(),
+          total_cost_usd: getTotalCost(),
+          usage: this.totalUsage,
+          modelUsage: getModelUsage(),
+          permission_denials: [],
+          fast_mode_state: getFastModeState(
+            mainLoopModel,
+            initialAppState.fastMode,
+          ),
+          uuid: randomUUID(),
+        }
+        return
+      }
       yield {
         type: 'result',
         subtype: 'error_during_execution',

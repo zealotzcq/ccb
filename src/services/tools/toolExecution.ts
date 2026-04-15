@@ -1012,6 +1012,32 @@ async function checkPermissionsAndCallTool(
     endToolBlockedOnUserSpan('reject', decisionInfo?.source || 'unknown')
     endToolSpan()
 
+    // In non-interactive mode, requiresUserInteraction tools (e.g. AskUserQuestion)
+    // should output the tool_use JSON and stop cleanly — no error tool_result,
+    // no model retry. The external bridge will collect the user's answer,
+    // write it to the session file, and resume.
+    // Push a hook_stopped_continuation attachment so the query loop stops
+    // via return { reason: 'hook_stopped' } without checking max_turns.
+    if (
+      permissionDecision.behavior === 'ask' &&
+      tool.requiresUserInteraction?.() &&
+      !process.stdout.isTTY
+    ) {
+      logForDebugging(
+        `${tool.name} requires user interaction in non-interactive mode — stopping cleanly`,
+      )
+      resultingMessages.push({
+        message: createAttachmentMessage({
+          type: 'hook_stopped_continuation',
+          message: `${tool.name} requires user interaction in non-interactive mode`,
+          hookName: 'NonInteractiveUserInteraction',
+          toolUseID,
+          hookEvent: 'PermissionCheck',
+        }),
+      })
+      return resultingMessages
+    }
+
     logEvent('tengu_tool_use_can_use_tool_rejected', {
       messageID:
         messageId as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
